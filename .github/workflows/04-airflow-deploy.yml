@@ -1,0 +1,30 @@
+name: Deploy Airflow DAGs to EC2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'airflow/dags/**'
+
+  workflow_dispatch:
+
+jobs:
+  deploy-dags:
+    name: Sync DAGs to Airflow EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy DAGs via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host:     ${{ secrets.AIRFLOW_EC2_HOST }}
+          username: ec2-user
+          key:      ${{ secrets.AIRFLOW_EC2_SSH_KEY }}
+          script: |
+            cd ~/airflow
+            git pull origin main
+            echo "✅ DAGs updated"
+            docker compose restart airflow-scheduler

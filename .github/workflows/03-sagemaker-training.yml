@@ -1,0 +1,49 @@
+name: Launch SageMaker Training Job
+
+on:
+  workflow_dispatch:  # manual trigger only
+    inputs:
+      max_depth:
+        description: XGBoost max depth
+        default: "6"
+      n_estimators:
+        description: Number of trees
+        default: "200"
+      learning_rate:
+        description: Learning rate
+        default: "0.1"
+
+jobs:
+  train:
+    name: Train fraud detection model
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            us-east-1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install sagemaker boto3
+
+      - name: Upload training script to S3
+        run: |
+          aws s3 cp sagemaker/training/train.py \
+            s3://mlops-dev-mlflow-store/sagemaker/code/train.py
+
+      - name: Launch SageMaker training job
+        env:
+          DATABRICKS_HOST:  ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: python sagemaker/launch_training.py
