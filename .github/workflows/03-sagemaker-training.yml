@@ -47,6 +47,6 @@ jobs:
 
       - name: Launch SageMaker training job
         env:
-          DATABRICKS_HOST:  ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_HOST:  "https://dbc-c586aafa-13e2.cloud.databricks.com"
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
         run: python sagemaker/launch_training.py
