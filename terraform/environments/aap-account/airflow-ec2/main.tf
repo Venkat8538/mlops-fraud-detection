@@ -200,3 +200,12 @@ resource "aws_instance" "airflow" {
 
   tags = { Name = "mlops-airflow", ManagedBy = "Terraform" }
 }
+
+# ──────────────────────────────────────────────
+# Elastic IP — gives Airflow a stable public IP
+# ──────────────────────────────────────────────
+resource "aws_eip" "airflow" {
+  instance   = aws_instance.airflow.id
+  domain     = "vpc"
+  tags       = { Name = "mlops-airflow-eip", ManagedBy = "Terraform" }
+}

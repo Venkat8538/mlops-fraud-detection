@@ -28,31 +28,18 @@ resource "aws_vpc" "mlops" {
 }
 
 # ──────────────────────────────────────────────
-# Internet Gateway
+# Internet Gateway — public internet access
 # ──────────────────────────────────────────────
 resource "aws_internet_gateway" "mlops" {
   vpc_id = aws_vpc.mlops.id
   tags   = { Name = "mlops-dev-igw", ManagedBy = "Terraform" }
 }
 
-# ──────────────────────────────────────────────
-# Single NAT Gateway (dev — one AZ only)
-# ──────────────────────────────────────────────
-resource "aws_eip" "nat" {
-  domain     = "vpc"
-  depends_on = [aws_internet_gateway.mlops]
-  tags       = { Name = "mlops-dev-nat-eip", ManagedBy = "Terraform" }
-}
-
-resource "aws_nat_gateway" "mlops" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public[0].id
-  depends_on    = [aws_internet_gateway.mlops]
-  tags          = { Name = "mlops-dev-nat", ManagedBy = "Terraform" }
-}
+# NAT Gateway removed — Airflow EC2 runs in public subnet
+# Add back when moving to production with private subnets
 
 # ──────────────────────────────────────────────
-# Public subnets (2) — NAT gateway, Airflow EC2
+# Public subnets (2) — Airflow EC2, load balancers
 # ──────────────────────────────────────────────
 resource "aws_subnet" "public" {
   count                   = 2
@@ -83,6 +70,7 @@ resource "aws_route_table_association" "public" {
 
 # ──────────────────────────────────────────────
 # Private subnets (2) — Databricks cluster nodes
+# No internet route — isolated for cluster traffic
 # ──────────────────────────────────────────────
 resource "aws_subnet" "private" {
   count             = 2
@@ -93,25 +81,8 @@ resource "aws_subnet" "private" {
   tags = { Name = "mlops-dev-private-${count.index + 1}", ManagedBy = "Terraform" }
 }
 
-resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.mlops.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.mlops.id
-  }
-
-  tags = { Name = "mlops-dev-private-rt", ManagedBy = "Terraform" }
-}
-
-resource "aws_route_table_association" "private" {
-  count          = 2
-  subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private.id
-}
-
 # ──────────────────────────────────────────────
-# Security group — cluster nodes (Databricks + Airflow)
+# Security group — Databricks cluster nodes
 # ──────────────────────────────────────────────
 resource "aws_security_group" "mlops" {
   name        = "mlops-dev-sg"
