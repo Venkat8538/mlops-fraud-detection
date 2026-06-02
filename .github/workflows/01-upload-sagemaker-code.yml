@@ -5,8 +5,11 @@ on:
     branches: [main]
     paths:
       - 'sagemaker/**'
+  workflow_dispatch:
 
-  workflow_dispatch:  # allow manual trigger
+permissions:
+  id-token: write   # required for OIDC
+  contents: read
 
 jobs:
   upload:
@@ -17,17 +20,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (OIDC — no keys)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region:            us-east-1
+          role-to-assume: arn:aws:iam::482227257362:role/github-actions-mlops-role
+          aws-region:     us-east-1
 
       - name: Upload training script to S3
         run: |
           aws s3 cp sagemaker/training/train.py \
             s3://mlops-dev-mlflow-store/sagemaker/code/train.py
-
           echo "✅ Uploaded sagemaker/training/train.py"
           aws s3 ls s3://mlops-dev-mlflow-store/sagemaker/code/
