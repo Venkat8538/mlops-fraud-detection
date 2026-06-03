@@ -33,10 +33,10 @@ OUTPUT_PATH          = "s3://mlops-dev-mlflow-store/sagemaker/model-output"
 AUC_THRESHOLD        = 0.90
 
 NOTEBOOK_PATHS = {
-    "bronze": "/Users/ganjikunta.venkat@gmail.com/01_bronze_ingestion",
-    "silver": "/Users/ganjikunta.venkat@gmail.com/02_silver_cleaning",
-    "gold":   "/Users/ganjikunta.venkat@gmail.com/03_gold_features",
-    "export": "/Users/ganjikunta.venkat@gmail.com/04_export_gold_to_s3",
+    "bronze": "/Users/ganjikunta.venkat@gmail.com/mlops-fraud-detection/databricks/notebooks/01_bronze_ingestion",
+    "silver": "/Users/ganjikunta.venkat@gmail.com/mlops-fraud-detection/databricks/notebooks/02_silver_cleaning",
+    "gold":   "/Users/ganjikunta.venkat@gmail.com/mlops-fraud-detection/databricks/notebooks/03_gold_features",
+    "export": "/Users/ganjikunta.venkat@gmail.com/mlops-fraud-detection/databricks/notebooks/04_export_gold_to_s3",
 }
 
 # ── Default args ──────────────────────────────────────────────
