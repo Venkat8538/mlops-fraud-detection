@@ -1,0 +1,529 @@
+{
+  "version": 4,
+  "terraform_version": "1.4.5",
+  "serial": 33,
+  "lineage": "0de5c12b-1bc8-fd17-4942-e7bb0ec5e1c4",
+  "outputs": {
+    "airflow_public_ip": {
+      "value": "52.5.246.110",
+      "type": "string"
+    },
+    "airflow_ui_url": {
+      "value": "http://52.5.246.110:8080",
+      "type": "string"
+    },
+    "ssh_command": {
+      "value": "ssh -i ~/.ssh/id_ed25519 ec2-user@52.5.246.110",
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "mode": "data",
+      "type": "aws_ami",
+      "name": "amazon_linux",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "architecture": "x86_64",
+            "arn": "arn:aws:ec2:us-east-1::image/ami-00fa360e28f425da0",
+            "block_device_mappings": [
+              {
+                "device_name": "/dev/xvda",
+                "ebs": {
+                  "delete_on_termination": "true",
+                  "encrypted": "false",
+                  "iops": "3000",
+                  "snapshot_id": "snap-0cd5f630552e67ca8",
+                  "throughput": "125",
+                  "volume_initialization_rate": "0",
+                  "volume_size": "8",
+                  "volume_type": "gp3"
+                },
+                "no_device": "",
+                "virtual_name": ""
+              }
+            ],
+            "boot_mode": "uefi-preferred",
+            "creation_date": "2026-05-21T18:13:30.000Z",
+            "deprecation_time": "2026-08-19T18:49:00.000Z",
+            "description": "Amazon Linux 2023 AMI 2023.11.20260526.0 x86_64 HVM kernel-6.18",
+            "ena_support": true,
+            "executable_users": null,
+            "filter": [
+              {
+                "name": "description",
+                "values": [
+                  "Amazon Linux 2023 AMI*"
+                ]
+              },
+              {
+                "name": "name",
+                "values": [
+                  "al2023-ami-2023*-kernel-*-x86_64"
+                ]
+              },
+              {
+                "name": "virtualization-type",
+                "values": [
+                  "hvm"
+                ]
+              }
+            ],
+            "hypervisor": "xen",
+            "id": "ami-00fa360e28f425da0",
+            "image_id": "ami-00fa360e28f425da0",
+            "image_location": "amazon/al2023-ami-2023.11.20260526.0-kernel-6.18-x86_64",
+            "image_owner_alias": "amazon",
+            "image_type": "machine",
+            "imds_support": "v2.0",
+            "include_deprecated": false,
+            "kernel_id": "",
+            "last_launched_time": "",
+            "most_recent": true,
+            "name": "al2023-ami-2023.11.20260526.0-kernel-6.18-x86_64",
+            "name_regex": null,
+            "owner_id": "137112412989",
+            "owners": [
+              "amazon"
+            ],
+            "platform": "",
+            "platform_details": "Linux/UNIX",
+            "product_codes": [],
+            "public": true,
+            "ramdisk_id": "",
+            "root_device_name": "/dev/xvda",
+            "root_device_type": "ebs",
+            "root_snapshot_id": "snap-0cd5f630552e67ca8",
+            "sriov_net_support": "simple",
+            "state": "available",
+            "state_reason": {
+              "code": "UNSET",
+              "message": "UNSET"
+            },
+            "tags": {},
+            "timeouts": null,
+            "tpm_support": "",
+            "uefi_data": null,
+            "usage_operation": "RunInstances",
+            "virtualization_type": "hvm"
+          },
+          "sensitive_attributes": []
+        }
+      ]
+    },
+    {
+      "mode": "data",
+      "type": "aws_caller_identity",
+      "name": "current",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "account_id": "482227257362",
+            "arn": "arn:aws:iam::482227257362:user/venkat_admin",
+            "id": "482227257362",
+            "user_id": "AIDAXARX4AAJMQMYSP65A"
+          },
+          "sensitive_attributes": []
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_eip",
+      "name": "airflow",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "address": null,
+            "allocation_id": "eipalloc-0c40cc3773367bc1a",
+            "arn": "arn:aws:ec2:us-east-1:482227257362:elastic-ip/eipalloc-0c40cc3773367bc1a",
+            "associate_with_private_ip": null,
+            "association_id": "eipassoc-09ad862a28dfc3ab6",
+            "carrier_ip": "",
+            "customer_owned_ip": "",
+            "customer_owned_ipv4_pool": "",
+            "domain": "vpc",
+            "id": "eipalloc-0c40cc3773367bc1a",
+            "instance": "i-06ad44f17d6f07d5d",
+            "ipam_pool_id": null,
+            "network_border_group": "us-east-1",
+            "network_interface": "eni-0635156f8a7267d1b",
+            "private_dns": "ip-10-0-0-8.ec2.internal",
+            "private_ip": "10.0.0.8",
+            "ptr_record": "",
+            "public_dns": "ec2-52-5-246-110.compute-1.amazonaws.com",
+            "public_ip": "52.5.246.110",
+            "public_ipv4_pool": "amazon",
+            "tags": {
+              "ManagedBy": "Terraform",
+              "Name": "mlops-airflow-eip"
+            },
+            "tags_all": {
+              "ManagedBy": "Terraform",
+              "Name": "mlops-airflow-eip"
+            },
+            "timeouts": null,
+            "vpc": true
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiZGVsZXRlIjoxODAwMDAwMDAwMDAsInJlYWQiOjkwMDAwMDAwMDAwMCwidXBkYXRlIjozMDAwMDAwMDAwMDB9fQ==",
+          "dependencies": [
+            "aws_iam_instance_profile.airflow_ec2",
+            "aws_instance.airflow",
+            "aws_key_pair.airflow",
+            "aws_security_group.airflow",
+            "data.aws_ami.amazon_linux"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_iam_instance_profile",
+      "name": "airflow_ec2",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:iam::482227257362:instance-profile/airflow-ec2-profile",
+            "create_date": "2026-06-02T18:59:52Z",
+            "id": "airflow-ec2-profile",
+            "name": "airflow-ec2-profile",
+            "name_prefix": "",
+            "path": "/",
+            "role": "airflow-ec2-role",
+            "tags": {},
+            "tags_all": {},
+            "unique_id": "AIPAXARX4AAJPDUDVJBMQ"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_iam_role.airflow_ec2"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_iam_role",
+      "name": "airflow_ec2",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:iam::482227257362:role/airflow-ec2-role",
+            "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"ec2.amazonaws.com\"}}],\"Version\":\"2012-10-17\"}",
+            "create_date": "2026-06-02T18:59:52Z",
+            "description": "",
+            "force_detach_policies": false,
+            "id": "airflow-ec2-role",
+            "inline_policy": [
+              {
+                "name": "airflow-ec2-policy",
+                "policy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Action\":[\"sagemaker:CreateTrainingJob\",\"sagemaker:DescribeTrainingJob\",\"sagemaker:StopTrainingJob\",\"sagemaker:CreateModel\",\"sagemaker:CreateEndpointConfig\",\"sagemaker:CreateEndpoint\",\"sagemaker:DescribeEndpoint\",\"sagemaker:UpdateEndpoint\",\"sagemaker:DeleteEndpoint\"],\"Effect\":\"Allow\",\"Resource\":\"*\",\"Sid\":\"SageMakerAccess\"},{\"Action\":[\"s3:GetObject\",\"s3:PutObject\",\"s3:ListBucket\"],\"Effect\":\"Allow\",\"Resource\":[\"arn:aws:s3:::mlops-dev-gold\",\"arn:aws:s3:::mlops-dev-gold/*\",\"arn:aws:s3:::mlops-dev-mlflow-store\",\"arn:aws:s3:::mlops-dev-mlflow-store/*\"],\"Sid\":\"S3Access\"},{\"Action\":\"iam:PassRole\",\"Effect\":\"Allow\",\"Resource\":\"arn:aws:iam::482227257362:role/sagemaker-execution-role\",\"Sid\":\"PassSageMakerRole\"},{\"Action\":[\"ssm:GetParameter\",\"ssm:GetParameters\"],\"Effect\":\"Allow\",\"Resource\":\"arn:aws:ssm:us-east-1:482227257362:parameter/mlops/*\",\"Sid\":\"SSMAccess\"}]}"
+              }
+            ],
+            "managed_policy_arns": [],
+            "max_session_duration": 3600,
+            "name": "airflow-ec2-role",
+            "name_prefix": "",
+            "path": "/",
+            "permissions_boundary": "",
+            "tags": {
+              "ManagedBy": "Terraform",
+              "Name": "airflow-ec2-role"
+            },
+            "tags_all": {
+              "ManagedBy": "Terraform",
+              "Name": "airflow-ec2-role"
+            },
+            "unique_id": "AROAXARX4AAJI5VMBS23F"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_iam_role_policy",
+      "name": "airflow_ec2",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "airflow-ec2-role:airflow-ec2-policy",
+            "name": "airflow-ec2-policy",
+            "name_prefix": "",
+            "policy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Action\":[\"sagemaker:CreateTrainingJob\",\"sagemaker:DescribeTrainingJob\",\"sagemaker:StopTrainingJob\",\"sagemaker:CreateModel\",\"sagemaker:CreateEndpointConfig\",\"sagemaker:CreateEndpoint\",\"sagemaker:DescribeEndpoint\",\"sagemaker:UpdateEndpoint\",\"sagemaker:DeleteEndpoint\"],\"Effect\":\"Allow\",\"Resource\":\"*\",\"Sid\":\"SageMakerAccess\"},{\"Action\":[\"s3:GetObject\",\"s3:PutObject\",\"s3:ListBucket\"],\"Effect\":\"Allow\",\"Resource\":[\"arn:aws:s3:::mlops-dev-gold\",\"arn:aws:s3:::mlops-dev-gold/*\",\"arn:aws:s3:::mlops-dev-mlflow-store\",\"arn:aws:s3:::mlops-dev-mlflow-store/*\"],\"Sid\":\"S3Access\"},{\"Action\":\"iam:PassRole\",\"Effect\":\"Allow\",\"Resource\":\"arn:aws:iam::482227257362:role/sagemaker-execution-role\",\"Sid\":\"PassSageMakerRole\"},{\"Action\":[\"ssm:GetParameter\",\"ssm:GetParameters\"],\"Effect\":\"Allow\",\"Resource\":\"arn:aws:ssm:us-east-1:482227257362:parameter/mlops/*\",\"Sid\":\"SSMAccess\"}]}",
+            "role": "airflow-ec2-role"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_iam_role.airflow_ec2",
+            "data.aws_caller_identity.current"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_instance",
+      "name": "airflow",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "ami": "ami-00fa360e28f425da0",
+            "arn": "arn:aws:ec2:us-east-1:482227257362:instance/i-06ad44f17d6f07d5d",
+            "associate_public_ip_address": false,
+            "availability_zone": "us-east-1a",
+            "capacity_reservation_specification": [
+              {
+                "capacity_reservation_preference": "open",
+                "capacity_reservation_target": []
+              }
+            ],
+            "cpu_core_count": 1,
+            "cpu_options": [
+              {
+                "amd_sev_snp": "",
+                "core_count": 1,
+                "threads_per_core": 2
+              }
+            ],
+            "cpu_threads_per_core": 2,
+            "credit_specification": [
+              {
+                "cpu_credits": "unlimited"
+              }
+            ],
+            "disable_api_stop": false,
+            "disable_api_termination": false,
+            "ebs_block_device": [],
+            "ebs_optimized": false,
+            "enable_primary_ipv6": null,
+            "enclave_options": [
+              {
+                "enabled": false
+              }
+            ],
+            "ephemeral_block_device": [],
+            "get_password_data": false,
+            "hibernation": false,
+            "host_id": "",
+            "host_resource_group_arn": null,
+            "iam_instance_profile": "airflow-ec2-profile",
+            "id": "i-06ad44f17d6f07d5d",
+            "instance_initiated_shutdown_behavior": "stop",
+            "instance_lifecycle": "",
+            "instance_market_options": [],
+            "instance_state": "running",
+            "instance_type": "t3.medium",
+            "ipv6_address_count": 0,
+            "ipv6_addresses": [],
+            "key_name": "airflow-ec2-key",
+            "launch_template": [],
+            "maintenance_options": [
+              {
+                "auto_recovery": "default"
+              }
+            ],
+            "metadata_options": [
+              {
+                "http_endpoint": "enabled",
+                "http_protocol_ipv6": "disabled",
+                "http_put_response_hop_limit": 2,
+                "http_tokens": "required",
+                "instance_metadata_tags": "disabled"
+              }
+            ],
+            "monitoring": false,
+            "network_interface": [],
+            "outpost_arn": "",
+            "password_data": "",
+            "placement_group": "",
+            "placement_partition_number": 0,
+            "primary_network_interface_id": "eni-0635156f8a7267d1b",
+            "private_dns": "ip-10-0-0-8.ec2.internal",
+            "private_dns_name_options": [
+              {
+                "enable_resource_name_dns_a_record": false,
+                "enable_resource_name_dns_aaaa_record": false,
+                "hostname_type": "ip-name"
+              }
+            ],
+            "private_ip": "10.0.0.8",
+            "public_dns": "",
+            "public_ip": "",
+            "root_block_device": [
+              {
+                "delete_on_termination": true,
+                "device_name": "/dev/xvda",
+                "encrypted": false,
+                "iops": 3000,
+                "kms_key_id": "",
+                "tags": null,
+                "tags_all": {},
+                "throughput": 125,
+                "volume_id": "vol-024399bf1e01d8076",
+                "volume_size": 30,
+                "volume_type": "gp3"
+              }
+            ],
+            "secondary_private_ips": [],
+            "security_groups": [],
+            "source_dest_check": true,
+            "spot_instance_request_id": "",
+            "subnet_id": "subnet-000666ea90e8caf69",
+            "tags": {
+              "ManagedBy": "Terraform",
+              "Name": "mlops-airflow"
+            },
+            "tags_all": {
+              "ManagedBy": "Terraform",
+              "Name": "mlops-airflow"
+            },
+            "tenancy": "default",
+            "timeouts": null,
+            "user_data": "ae4004d1839c716708a796d2dac14549edc78896",
+            "user_data_base64": null,
+            "user_data_replace_on_change": false,
+            "volume_tags": null,
+            "vpc_security_group_ids": [
+              "sg-053da097bc392f309"
+            ]
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6MTIwMDAwMDAwMDAwMCwicmVhZCI6OTAwMDAwMDAwMDAwLCJ1cGRhdGUiOjYwMDAwMDAwMDAwMH0sInNjaGVtYV92ZXJzaW9uIjoiMSJ9",
+          "dependencies": [
+            "aws_iam_instance_profile.airflow_ec2",
+            "aws_key_pair.airflow",
+            "aws_security_group.airflow",
+            "data.aws_ami.amazon_linux"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_key_pair",
+      "name": "airflow",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:ec2:us-east-1:482227257362:key-pair/airflow-ec2-key",
+            "fingerprint": "DEbQqnDCN4UGJPOa+SzpD2accdCmvVUID0QaMh3/dSo=",
+            "id": "airflow-ec2-key",
+            "key_name": "airflow-ec2-key",
+            "key_name_prefix": "",
+            "key_pair_id": "key-093c81f910eae4907",
+            "key_type": "ed25519",
+            "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICdNb1GJY8r7Xqf4EjDaqzKgtSSx5xNfRdkOxj85isqz ganjikunta.venkat@gmail.com",
+            "tags": {
+              "ManagedBy": "Terraform",
+              "Name": "airflow-ec2-key"
+            },
+            "tags_all": {
+              "ManagedBy": "Terraform",
+              "Name": "airflow-ec2-key"
+            }
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_security_group",
+      "name": "airflow",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:ec2:us-east-1:482227257362:security-group/sg-053da097bc392f309",
+            "description": "Airflow EC2 security group",
+            "egress": [
+              {
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ],
+                "description": "",
+                "from_port": 0,
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "protocol": "-1",
+                "security_groups": [],
+                "self": false,
+                "to_port": 0
+              }
+            ],
+            "id": "sg-053da097bc392f309",
+            "ingress": [
+              {
+                "cidr_blocks": [
+                  "168.93.49.71/32"
+                ],
+                "description": "Airflow web UI",
+                "from_port": 8080,
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "protocol": "tcp",
+                "security_groups": [],
+                "self": false,
+                "to_port": 8080
+              },
+              {
+                "cidr_blocks": [
+                  "168.93.49.71/32"
+                ],
+                "description": "SSH access",
+                "from_port": 22,
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "protocol": "tcp",
+                "security_groups": [],
+                "self": false,
+                "to_port": 22
+              }
+            ],
+            "name": "airflow-ec2-sg",
+            "name_prefix": "",
+            "owner_id": "482227257362",
+            "revoke_rules_on_delete": false,
+            "tags": {
+              "ManagedBy": "Terraform",
+              "Name": "airflow-ec2-sg"
+            },
+            "tags_all": {
+              "ManagedBy": "Terraform",
+              "Name": "airflow-ec2-sg"
+            },
+            "timeouts": null,
+            "vpc_id": "vpc-07cce3a962a5199c2"
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6OTAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    }
+  ],
+  "check_results": null
+}

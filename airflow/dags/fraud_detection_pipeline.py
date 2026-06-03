@@ -32,11 +32,15 @@ TRAINING_DATA_PATH   = "s3://mlops-dev-mlflow-store/sagemaker/training-data"
 OUTPUT_PATH          = "s3://mlops-dev-mlflow-store/sagemaker/model-output"
 AUC_THRESHOLD        = 0.90
 
+# Repo-based paths — not tied to a personal user workspace
+# Source of truth is GitHub: Venkat8538/mlops-fraud-detection
+NOTEBOOK_REPO_BASE = "/Repos/ganjikunta.venkat@gmail.com/mlops-fraud-detection/databricks/notebooks"
+
 NOTEBOOK_PATHS = {
-    "bronze": "/Users/ganjikunta.venkat@gmail.com/mlops-fraud-detection/databricks/notebooks/01_bronze_ingestion",
-    "silver": "/Users/ganjikunta.venkat@gmail.com/mlops-fraud-detection/databricks/notebooks/02_silver_cleaning",
-    "gold":   "/Users/ganjikunta.venkat@gmail.com/mlops-fraud-detection/databricks/notebooks/03_gold_features",
-    "export": "/Users/ganjikunta.venkat@gmail.com/mlops-fraud-detection/databricks/notebooks/04_export_gold_to_s3",
+    "bronze": f"{NOTEBOOK_REPO_BASE}/01_bronze_ingestion",
+    "silver": f"{NOTEBOOK_REPO_BASE}/02_silver_cleaning",
+    "gold":   f"{NOTEBOOK_REPO_BASE}/03_gold_features",
+    "export": f"{NOTEBOOK_REPO_BASE}/04_export_gold_to_s3",
 }
 
 # ── Default args ──────────────────────────────────────────────

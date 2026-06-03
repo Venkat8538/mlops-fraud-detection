@@ -108,6 +108,17 @@ resource "aws_iam_role_policy" "github_actions_sagemaker" {
         Effect = "Allow"
         Action = "iam:PassRole"
         Resource = "arn:aws:iam::482227257362:role/sagemaker-execution-role"
+      },
+      {
+        Sid    = "SSMRunCommand"
+        Effect = "Allow"
+        Action = [
+          "ssm:SendCommand",
+          "ssm:GetCommandInvocation",
+          "ssm:WaitForCommandExecuted",
+          "ssm:GetParameter"
+        ]
+        Resource = "*"
       }
     ]
   })

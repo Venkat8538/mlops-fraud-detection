@@ -8,12 +8,12 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write   # required for OIDC
+  id-token: write   # OIDC for AWS
   contents: read
 
 jobs:
   deploy-dags:
-    name: Sync DAGs to Airflow EC2
+    name: Sync DAGs to Airflow EC2 via SSM
     runs-on: ubuntu-latest
 
     steps:
@@ -26,14 +26,36 @@ jobs:
           role-to-assume: arn:aws:iam::482227257362:role/github-actions-mlops-role
           aws-region:     us-east-1
 
-      - name: Deploy DAGs via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host:     ${{ secrets.AIRFLOW_EC2_HOST }}
-          username: ec2-user
-          key:      ${{ secrets.AIRFLOW_EC2_SSH_KEY }}
-          script: |
-            cd ~/airflow
-            git pull origin main
-            echo "✅ DAGs updated"
-            docker compose restart airflow-scheduler
+      # Use SSM Run Command — no SSH port, no SSH key in secrets
+      - name: Deploy DAGs via AWS SSM Run Command
+        run: |
+          INSTANCE_ID=$(aws ssm get-parameter \
+            --name "/mlops/airflow/ec2-instance-id" \
+            --query "Parameter.Value" --output text)
+
+          echo "Deploying to instance: $INSTANCE_ID"
+
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "cd /home/ec2-user/mlops",
+              "git pull origin main",
+              "echo DAGs updated at $(date)"
+            ]' \
+            --query "Command.CommandId" --output text)
+
+          echo "SSM Command ID: $CMD_ID"
+
+          # Wait for completion
+          aws ssm wait command-executed \
+            --command-id "$CMD_ID" \
+            --instance-id "$INSTANCE_ID"
+
+          # Get output
+          aws ssm get-command-invocation \
+            --command-id "$CMD_ID" \
+            --instance-id "$INSTANCE_ID" \
+            --query "StandardOutputContent" --output text
+
+          echo "✅ DAGs deployed successfully"
