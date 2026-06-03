@@ -23,7 +23,18 @@ data "aws_ami" "amazon_linux" {
 
   filter {
     name   = "name"
-    values = ["al2023-ami-*-x86_64"]
+    values = ["al2023-ami-2023*-kernel-*-x86_64"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  # Exclude ECS-optimized AMIs
+  filter {
+    name   = "description"
+    values = ["Amazon Linux 2023 AMI*"]
   }
 }
 
@@ -174,28 +185,49 @@ resource "aws_instance" "airflow" {
     #!/bin/bash
     set -e
 
-    # Install Docker
+    # ── Install Docker + git ────────────────────────────────
     dnf update -y
     dnf install -y docker git
     systemctl start docker
     systemctl enable docker
     usermod -aG docker ec2-user
 
-    # Install Docker Compose
+    # ── Install Docker Compose ──────────────────────────────
     curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" \
       -o /usr/local/bin/docker-compose
     chmod +x /usr/local/bin/docker-compose
 
-    # Clone MLOps repo
-    cd /home/ec2-user
-    git clone https://github.com/Venkat8538/mlops-fraud-detection.git airflow
-    chown -R ec2-user:ec2-user airflow
+    # ── Fix SSH: Amazon Linux 2023 uses EC2 Instance Connect ─
+    # Disable it so standard authorized_keys works reliably
+    cat > /etc/ssh/sshd_config.d/99-local.conf <<SSHCONF
+    AuthorizedKeysCommand none
+    AuthorizedKeysCommandUser none
+    UsePAM no
+    SSHCONF
 
-    # Start Airflow
-    cd /home/ec2-user/airflow
+    # Prepend UsePAM no before the Include so it wins
+    sed -i "1s/^/UsePAM no\n/" /etc/ssh/sshd_config
+    systemctl restart sshd
+
+    # ── Fix logs permissions for Airflow (uid 50000 in container) ──
+    mkdir -p /home/ec2-user/mlops/airflow/logs/scheduler
+    mkdir -p /home/ec2-user/mlops/airflow/plugins
+    chown -R 50000:0 /home/ec2-user/mlops/airflow/logs
+    chown -R 50000:0 /home/ec2-user/mlops/airflow/plugins
+
+    # ── Clone MLOps repo ────────────────────────────────────
+    cd /home/ec2-user
+    git clone https://github.com/Venkat8538/mlops-fraud-detection.git mlops
+    chown -R ec2-user:ec2-user mlops
+
+    # ── Fix logs ownership after clone (git may reset it) ───
+    chown -R 50000:0 mlops/airflow/logs mlops/airflow/plugins
+
+    # ── Start Airflow ────────────────────────────────────────
+    cd /home/ec2-user/mlops
     docker-compose -f airflow/docker-compose.yml up -d
 
-    echo "✅ Airflow setup complete"
+    echo "✅ Airflow bootstrap complete"
   EOF
 
   tags = { Name = "mlops-airflow", ManagedBy = "Terraform" }
