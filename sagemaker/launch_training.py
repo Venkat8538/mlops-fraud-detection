@@ -15,6 +15,7 @@ Upload training script to S3 first:
     s3://mlops-dev-mlflow-store/sagemaker/code/train.py
 """
 
+import os
 import boto3
 import sagemaker
 from sagemaker.xgboost import XGBoost
@@ -28,7 +29,7 @@ CODE_PATH          = "s3://mlops-dev-mlflow-store/sagemaker/code"
 
 # Databricks MLflow — paste your workspace URL and token
 DATABRICKS_HOST    = "https://dbc-c586aafa-13e2.cloud.databricks.com"
-DATABRICKS_TOKEN   = ""   # ← paste your Databricks PAT token here
+DATABRICKS_TOKEN   = os.environ.get("DATABRICKS_TOKEN", "")
 MLFLOW_EXPERIMENT  = "/Users/ganjikunta.venkat@gmail.com/fraud-detection"
 
 # ── Session ─────────────────────────────────────────────

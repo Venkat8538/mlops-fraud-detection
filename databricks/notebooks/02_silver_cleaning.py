@@ -46,7 +46,7 @@ df_silver = (df_bronze
     .withColumn("hour_of_day",   F.hour("timestamp"))
     .withColumn("day_of_week",   F.dayofweek("timestamp"))    # 1=Sun, 7=Sat
     .withColumn("is_weekend",    (F.dayofweek("timestamp").isin([1, 7])).cast("int"))
-    .withColumn("is_night",      (F.hour("timestamp").between(0, 5)).cast("int"))
+    .withColumn("is_night",      ((F.hour("timestamp").between(0, 5)) | (F.hour("timestamp") == 23)).cast("int"))
 
     # Flag high-value transactions
     .withColumn("is_high_value", (F.col("amount") > 500).cast("int"))

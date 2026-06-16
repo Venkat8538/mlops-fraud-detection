@@ -25,7 +25,7 @@ from airflow.models import Variable
 
 # ── Config ────────────────────────────────────────────────────
 DATABRICKS_HOST      = "https://dbc-c586aafa-13e2.cloud.databricks.com"
-DATABRICKS_TOKEN     = Variable.get("DATABRICKS_TOKEN")
+DATABRICKS_TOKEN     = Variable.get("DATABRICKS_TOKEN", default_var=None)
 AWS_REGION           = "us-east-1"
 SAGEMAKER_ROLE_ARN   = "arn:aws:iam::482227257362:role/sagemaker-execution-role"
 TRAINING_DATA_PATH   = "s3://mlops-dev-mlflow-store/sagemaker/training-data"
