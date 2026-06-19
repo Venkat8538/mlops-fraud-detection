@@ -29,8 +29,13 @@ DATABRICKS_TOKEN     = Variable.get("DATABRICKS_TOKEN", default_var=None)
 AWS_REGION           = "us-east-1"
 SAGEMAKER_ROLE_ARN   = "arn:aws:iam::482227257362:role/sagemaker-execution-role"
 TRAINING_DATA_PATH   = "s3://mlops-dev-mlflow-store/sagemaker/training-data"
-OUTPUT_PATH          = "s3://mlops-dev-mlflow-store/sagemaker/model-output"
 AUC_THRESHOLD        = 0.90
+
+# ── Tenant config (AAP-427) ───────────────────────────────────
+TENANT      = "fraud-detection"
+MODEL_NAME  = "fraud-xgboost"
+S3_BUCKET   = "mlops-dev-mlflow-store"
+OUTPUT_PATH = f"s3://{S3_BUCKET}/create_factory/{MODEL_NAME}"
 
 # Repo-based paths — not tied to a personal user workspace
 # Source of truth is GitHub: Venkat8538/mlops-fraud-detection
@@ -110,18 +115,19 @@ def run_export(**context):
     run_databricks_notebook(NOTEBOOK_PATHS["export"], **context)
 
 def launch_sagemaker_training(**context):
+    import datetime
     import sagemaker
     from sagemaker.xgboost import XGBoost
 
-    run_date = context["ds_nodash"]
-    job_name = f"fraud-xgboost-{run_date}"
+    run_ts   = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    job_name = f"{TENANT}-{MODEL_NAME}-{run_ts}"
 
     boto_session      = boto3.Session(region_name=AWS_REGION)
     sagemaker_session = sagemaker.Session(boto_session=boto_session)
 
     estimator = XGBoost(
         entry_point       = "train.py",
-        source_dir        = "s3://mlops-dev-mlflow-store/sagemaker/code",
+        source_dir        = f"s3://{S3_BUCKET}/sagemaker/code",
         role              = SAGEMAKER_ROLE_ARN,
         instance_count    = 1,
         instance_type     = "ml.m5.xlarge",
@@ -130,11 +136,11 @@ def launch_sagemaker_training(**context):
         output_path       = OUTPUT_PATH,
         sagemaker_session = sagemaker_session,
         hyperparameters   = {
-            "max-depth":        6,
-            "n-estimators":     200,
-            "learning-rate":    0.1,
-            "scale-pos-weight": 10,
-            "test-size":        0.2,
+            "max-depth":         6,
+            "n-estimators":      200,
+            "learning-rate":     0.1,
+            "scale-pos-weight":  10,
+            "test-size":         0.2,
             "mlflow-experiment": "/Users/ganjikunta.venkat@gmail.com/fraud-detection",
         },
         environment = {
@@ -151,33 +157,39 @@ def launch_sagemaker_training(**context):
         logs     = True,
     )
 
-    # Store job name for downstream tasks
     context["ti"].xcom_push(key="sagemaker_job_name", value=job_name)
+    context["ti"].xcom_push(key="run_ts", value=run_ts)
     print(f"✅ Training complete: {job_name}")
 
 
 def evaluate_model(**context):
     job_name  = context["ti"].xcom_pull(key="sagemaker_job_name")
+    run_ts    = context["ti"].xcom_pull(key="run_ts")
     sm_client = boto3.client("sagemaker", region_name=AWS_REGION)
     s3_client = boto3.client("s3", region_name=AWS_REGION)
 
-    # Get model artifact path
-    job = sm_client.describe_training_job(TrainingJobName=job_name)
+    job      = sm_client.describe_training_job(TrainingJobName=job_name)
     model_s3 = job["ModelArtifacts"]["S3ModelArtifacts"]
     print(f"Model artifacts: {model_s3}")
 
-    # Read metrics from output
-    metrics_key = f"sagemaker/model-output/{job_name}/output/metrics.json"
+    # Read metrics from AAP-427 factory path
+    # train.py writes: create_factory/<model>/<tenant>_<model>_<ts>/artifacts/metrics.json
+    metrics_key = (
+        f"create_factory/{MODEL_NAME}"
+        f"/{TENANT}_{MODEL_NAME}_{run_ts}"
+        f"/artifacts/metrics.json"
+    )
     try:
-        obj     = s3_client.get_object(Bucket="mlops-dev-mlflow-store", Key=metrics_key)
+        obj     = s3_client.get_object(Bucket=S3_BUCKET, Key=metrics_key)
         metrics = json.loads(obj["Body"].read())
         auc     = metrics.get("roc_auc", 0)
+        print(f"Metrics path: s3://{S3_BUCKET}/{metrics_key}")
         print(f"Model AUC: {auc}  Threshold: {AUC_THRESHOLD}")
         context["ti"].xcom_push(key="model_auc", value=auc)
         context["ti"].xcom_push(key="model_s3",  value=model_s3)
         return auc
     except Exception as e:
-        print(f"Could not read metrics: {e}")
+        print(f"Could not read metrics from {metrics_key}: {e}")
         context["ti"].xcom_push(key="model_auc", value=0)
 
 

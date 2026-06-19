@@ -7,23 +7,37 @@ Inputs  (via SageMaker channel):
 
 Outputs (written by SageMaker):
     /opt/ml/model/             — saved XGBoost model
+
+S3 artifact structure (AAP-427):
+    create_experiment/<tenant>/create_model_year_<YYYY>/run_id_<run_id>/namespace_run/model/
+    create_factory/<model_name>/<tenant>_<model_name>_<date>/artifacts/metrics.json
 """
 
 import os
 import json
 import argparse
 import logging
+import datetime
+import boto3
 import numpy as np
 import pandas as pd
 import xgboost as xgb
 import mlflow
 import mlflow.xgboost
 
+from mlflow.models.signature import infer_signature
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import (
     roc_auc_score, f1_score, precision_score,
     recall_score, confusion_matrix, classification_report
 )
+
+# ── Tenant config (AAP-427) ───────────────────
+TENANT      = "fraud-detection"
+NAMESPACE   = "fraud-detection"
+MODEL_NAME  = "fraud-xgboost"
+ENV         = "dev"
+S3_BUCKET   = "mlops-dev-mlflow-store"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -174,12 +188,26 @@ def main():
         "scale_pos_weight": args.scale_pos_weight,
     }
 
+    run_date   = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+    run_year   = datetime.datetime.utcnow().strftime("%Y")
+    run_ts     = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+
     # ── Setup MLflow ──────────────────────────────
     mlflow.set_tracking_uri(args.mlflow_tracking_uri)
     mlflow.set_experiment(args.mlflow_experiment)
 
-    with mlflow.start_run(run_name="xgboost-fraud-v1") as run:
-        logger.info(f"MLflow run ID: {run.info.run_id}")
+    with mlflow.start_run(run_name=f"{MODEL_NAME}-{run_date}") as run:
+        run_id = run.info.run_id
+        logger.info(f"MLflow run ID: {run_id}")
+
+        # ── Tenant tags (AAP-427) ─────────────────
+        mlflow.set_tags({
+            "tenant":     TENANT,
+            "namespace":  NAMESPACE,
+            "model_name": MODEL_NAME,
+            "env":        ENV,
+            "run_date":   run_date,
+        })
 
         # ── Load data ─────────────────────────────
         df = load_data(args.train)
@@ -200,6 +228,8 @@ def main():
         mlflow.log_param("test_rows",        len(X_test))
         mlflow.log_param("fraud_rate_train", round(y_train.mean(), 4))
         mlflow.log_param("n_features",       len(FEATURE_COLS))
+        mlflow.log_param("tenant",           TENANT)
+        mlflow.log_param("namespace",        NAMESPACE)
 
         # ── Train ─────────────────────────────────
         logger.info("Training XGBoost model...")
@@ -215,12 +245,16 @@ def main():
         for feat, score in top_features.items():
             mlflow.log_metric(f"feat_{feat}", round(float(score), 4))
 
-        # ── Log model ─────────────────────────────
+        # ── Log model with signature (AAP-427) ────
+        signature     = infer_signature(X_train, model.predict(X_train))
+        input_example = X_test.iloc[:5]
+
         mlflow.xgboost.log_model(
             model,
-            artifact_path   = "fraud-xgboost-model",
-            registered_model_name = "fraud-detection-xgboost",
-            input_example   = X_test.iloc[:5],
+            artifact_path         = "model",
+            registered_model_name = f"{TENANT}-{MODEL_NAME}",
+            signature             = signature,
+            input_example         = input_example,
         )
 
         # ── Save model for SageMaker ──────────────
@@ -229,11 +263,48 @@ def main():
         model.save_model(model_path)
         logger.info(f"Model saved to {model_path}")
 
-        # ── Save metrics to output ─────────────────
+        # ── Write metrics locally for SageMaker output ──
         os.makedirs(args.output_dir, exist_ok=True)
         metrics_path = os.path.join(args.output_dir, "metrics.json")
         with open(metrics_path, "w") as f:
             json.dump(metrics, f, indent=2)
+
+        # ── Upload to S3 — AAP-427 folder structure ──
+        # Production Lab:
+        #   create_experiment/<tenant>/create_model_year_<YYYY>/run_id_<run_id>/namespace_run/
+        # Production Factory:
+        #   create_factory/<model_name>/<tenant>_<model_name>_<date>/artifacts/
+        s3 = boto3.client("s3")
+
+        # Experiment path — metrics artifact
+        experiment_key = (
+            f"create_experiment/{TENANT}/create_model_year_{run_year}"
+            f"/run_id_{run_id}/namespace_run/artifacts"
+            f"/mft_aff_{run_id}_{run_date}/metrics.json"
+        )
+        s3.put_object(
+            Bucket = S3_BUCKET,
+            Key    = experiment_key,
+            Body   = json.dumps(metrics, indent=2).encode(),
+        )
+        logger.info(f"Metrics uploaded → s3://{S3_BUCKET}/{experiment_key}")
+
+        # Factory path — inference-ready metrics for Airflow quality gate
+        factory_key = (
+            f"create_factory/{MODEL_NAME}"
+            f"/{TENANT}_{MODEL_NAME}_{run_ts}"
+            f"/artifacts/metrics.json"
+        )
+        s3.put_object(
+            Bucket = S3_BUCKET,
+            Key    = factory_key,
+            Body   = json.dumps(metrics, indent=2).encode(),
+        )
+        logger.info(f"Factory metrics → s3://{S3_BUCKET}/{factory_key}")
+
+        # Store factory path in MLflow so Airflow can retrieve it
+        mlflow.log_param("s3_factory_path", f"s3://{S3_BUCKET}/{factory_key}")
+        mlflow.log_param("s3_experiment_path", f"s3://{S3_BUCKET}/{experiment_key}")
 
         logger.info(f"✅ Training complete — ROC AUC: {metrics['roc_auc']}")
         logger.info(f"   Precision: {metrics['precision']}  Recall: {metrics['recall']}  F1: {metrics['f1']}")
